@@ -1,61 +1,55 @@
-# 📦 Importing necessary libraries
-import os  # for accessing environment variables like API keys
-import streamlit as st  # for creating the web app
-from dotenv import load_dotenv  # to load environment variables from .env file
-from openai import OpenAI  # not used in this code – can be removed if unnecessary
-import google.generativeai as genai  # type: ignore # Gemini's generative AI library
+# 📦 Import required libraries
+import os  # 🗂️ Used to access environment variables
+from dotenv import load_dotenv  # 🔐 Load variables from a .env file
+import google.generativeai as genai  # 🤖 Gemini AI (Google's language model)
 
-# 📥 Load environment variables from the .env file
+# 📥 Load API key from the .env file
 load_dotenv()
+api_key = os.getenv("GEMINI_API_KEY")  # 🔑 Get Gemini API Key
 
-# 🔑 Get your Gemini API key from environment
-api_key = os.getenv("GEMINI_API_KEY")
+# 🚫 If API key is missing, show error and exit
+if not api_key:
+    print("❌ Error: GEMINI_API_KEY is not set in the env file!.")
+    exit()
 
-# 🛠️ Configure the Gemini AI with your API key
+# 🔧 Configure Gemini AI with the API key
 genai.configure(api_key=api_key)
 
-# 🌍 List of available languages for translation
-language = [
-    "Urdu", "Sindhi", "Bengali", "Chinese", "English", "Greek", "English", "Russian", "Hindi",
-    "Vietnamese", "Arabic", "Turkish", "Swedish", "Hebrew", "Romanian", "Finnnish",
+# 🌍 List of supported languages
+languages = [
+    "Urdu", "Sindhi", "Bengali", "Chinese", "English", "Greek", "Russian", "Hindi",
+    "Vietnamese", "Arabic", "Turkish", "Swedish", "Hebrew", "Romanian", "Finnish",
     "Balochi", "Punjabi", "Siraki", "Pashto", "Thai"
 ]
 
-# 🧱 Set page configuration for the Streamlit app
-st.set_page_config(
-    page_title="Translator by 💥Azeezullah_Noohpoto💥",
-    layout="centered"
-)
+# ✏️ Get user input text to translate
+text = input("📝 Enter English or Urdu text to translate: ")
 
-# 🖼️ Title and description of the app
-st.title("🌐 AI Translator")
-st.write("Created by **©Azeezullah** - Translate your English text into various languages using AI.")
+# 📋 Display available languages
+print("\n🌐 Available languages:")
+print("\n".join(languages))
 
-# 📝 Text area for user to enter English text
-text = st.text_area("Enter English text to translate:", height=150)
+# 🌐 Ask user to choose a target translation language
+lang = input("\n🈯 Choose language to translate to: ")
 
-# 🌐 Dropdown to select a language from the list
-selected_lang = st.selectbox("Choose language to translate to:", language)
+try:
+    # 🤖 Load the Gemini AI model
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    
+    # 🧠 Create a smart prompt for translation
+    prompt = f"""
+    You are a professional translator assistant. Detect whether the input is in English or Urdu,
+    and then translate the text to {lang}:
 
-# 🔘 Button to trigger translation
-btn = st.button("Translate")
+    Text: {text}
+    """
+    
+    # 🧾 Generate the translation using the model
+    response = model.generate_content(prompt)
+    
+    # 📤 Display the translated text
+    print(f"\n🌍 Translated to {lang}:\n{response.text}")
 
-# ⚙️ When the button is clicked and there's text
-if btn and text:
-    try:
-        # 🧠 Load the Gemini model
-        model = genai.GenerativeModel("gemini-1.5-flash")
-
-        # ✍️ Create the prompt for translation
-        prompt = f"Translate the following text to {selected_lang}:\n\n{text}"
-
-        # 🔄 Send the prompt to Gemini and get the response
-        response = model.generate_content(prompt)
-
-        # ✅ Display the translated text
-        st.success(f"✅ Translated to {selected_lang}")
-        st.markdown(f"**{response.text}**")
-
-    except Exception as e:
-        # ❌ If something goes wrong, show the error
-        st.error(f"❎ Error: {str(e)}")
+except Exception as e:
+    # ⚠️ Handle any errors
+    print(f"❗Error: {str(e)}")
